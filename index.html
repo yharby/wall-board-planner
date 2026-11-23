@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skådis wall builder</title>
+<meta name="description" content="Plan an IKEA Skådis pegboard wall in the browser. Drag boards onto your wall, snap them into place, and get exact drill marks and a shopping list.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='26' height='20' rx='2' fill='%23F7F7F4' stroke='%232350B0' stroke-width='2'/%3E%3Cg fill='%232350B0'%3E%3Crect x='9' y='10' width='2' height='5' rx='1'/%3E%3Crect x='15' y='10' width='2' height='5' rx='1'/%3E%3Crect x='21' y='10' width='2' height='5' rx='1'/%3E%3Crect x='12' y='17' width='2' height='5' rx='1'/%3E%3Crect x='18' y='17' width='2' height='5' rx='1'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>Skådis wall builder</h1>
+  <p class="sub">Drag boards from the tray onto your wall. They snap to the wall edges, the centre line and each other, and the measurements update as you move them.</p>
+
+  <div class="app">
+    <section class="card" aria-label="Wall">
+      <div class="tray">
+        <div id="tiles"></div>
+        <div class="tools">
+          <button type="button" id="undo" title="Undo (Ctrl+Z)">Undo</button>
+          <button type="button" id="redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+          <label>Measurements
+            <select data-set="dims">
+              <option value="all">All</option>
+              <option value="sel">Selected board only</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <label><input type="checkbox" data-set="snap"> Snap</label>
+          <label><input type="checkbox" data-set="acc"> Accessories</label>
+          <label><input type="checkbox" data-set="holes"> Drill holes</label>
+          <label>
+            <select id="preset" aria-label="Start from a layout">
+              <option value="">Start from…</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="canvas"><svg id="wall" xmlns="http://www.w3.org/2000/svg" role="application" aria-label="Wall with pegboards. Drag to move."></svg></div>
+      <div class="foot">
+        <p id="status"></p>
+        <ul id="warnings"></ul>
+        <p class="hint">Tap a tile to add a board next to the others, or drag it to an exact spot. Drag a board to move it, tap it to see its exact gaps and drill marks. <span class="kbd-only">Shift-click to select several. Hold <kbd>Alt</kbd> while dragging to turn off snapping. Arrow keys move by 1 cm (<kbd>Shift</kbd> for 10 cm), <kbd>Delete</kbd> removes, <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicates.</span></p>
+      </div>
+    </section>
+
+    <aside>
+      <section class="card" aria-label="Selection">
+        <div id="inspector"></div>
+      </section>
+
+      <section class="card" aria-label="Wall and desk">
+        <h2>Wall and desk</h2>
+        <label class="field">Wall width (cm)<input type="number" min="50" step="0.5" data-set="wall.w"></label>
+        <label class="field">Wall height (cm)<input type="number" min="100" step="0.5" data-set="wall.h"></label>
+        <div class="field stack">Wall colour
+          <div class="swatches" id="swatches"></div>
+          <input type="color" data-set="wall.color" aria-label="Custom wall colour">
+        </div>
+        <label class="check"><input type="checkbox" data-set="desk.on"> Desk under the boards</label>
+        <label class="field">Desk top from floor<input type="number" min="30" step="0.5" data-set="desk.h"></label>
+        <label class="field">Gap above desk items<input type="number" min="0" step="0.5" data-set="clear"></label>
+        <p class="hint">Drawer units are the light boxes on the desk. Drag them sideways to where they really stand, then click one to change its size.</p>
+        <div class="btns"><button type="button" id="addStor">Add desk item</button></div>
+      </section>
+
+      <section class="card" aria-label="Drilling">
+        <h2>Drilling</h2>
+        <p class="hint">From IKEA’s instructions, each board hangs on one rail with two wall screws, 20, 40 or 60 cm apart for the 36, 56 or 76 cm board, so each screw sits 8 cm in from the board’s side edge. Neighbouring boards leave a 5 mm joint (rails 16.5 cm apart side by side, 56.5 cm apart when stacked).</p>
+        <label class="field">Screw holes below board top<input type="number" min="0" step="0.1" data-set="railD"></label>
+        <p class="hint">IKEA doesn’t publish this one, so 4 cm is a placeholder. Before drilling, fit the rail to the back of a board as in step 4 of the instructions, measure from the board’s top edge down to the centre of the rail’s wall-screw holes, and enter it here.</p>
+      </section>
+
+      <section class="card" aria-label="Shopping list">
+        <h2>Shopping list</h2>
+        <div id="shop"></div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="below">
+    <h2>Marks for the wall</h2>
+    <p class="lede">Outer edges of each board, measured from the left wall corner and from the floor. The bold columns are the screw holes to drill.</p>
+    <div class="card tablewrap"><table class="marks" id="table"></table></div>
+  </section>
+
+  <footer class="site-foot">
+    <p>Open source under the MIT licence. <a href="https://github.com/yharby/wall-board-planner">Source on GitHub</a>. Not affiliated with IKEA. Always check measurements against the real boards before you drill.</p>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
