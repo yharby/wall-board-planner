@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Skådis wall builder</title>
-<meta name="description" content="Plan an IKEA Skådis pegboard wall in the browser. Drag boards onto your wall, snap them into place, and get exact drill marks and a shopping list.">
+<title>Pegboard wall planner</title>
+<meta name="description" content="Plan a pegboard wall in the browser. Drag boards onto your wall, snap them into place, and get exact drill marks and a parts list. Save the plan as PNG or PDF.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='26' height='20' rx='2' fill='%23F7F7F4' stroke='%232350B0' stroke-width='2'/%3E%3Cg fill='%232350B0'%3E%3Crect x='9' y='10' width='2' height='5' rx='1'/%3E%3Crect x='15' y='10' width='2' height='5' rx='1'/%3E%3Crect x='21' y='10' width='2' height='5' rx='1'/%3E%3Crect x='12' y='17' width='2' height='5' rx='1'/%3E%3Crect x='18' y='17' width='2' height='5' rx='1'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Skådis wall builder</h1>
+  <h1>Pegboard wall planner</h1>
   <p class="sub">Drag boards from the tray onto your wall. They snap to the wall edges, the centre line and each other, and the measurements update as you move them.</p>
 
   <div class="app">
@@ -23,6 +23,8 @@
         <div class="tools">
           <button type="button" id="undo" title="Undo (Ctrl+Z)">Undo</button>
           <button type="button" id="redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+          <button type="button" id="savePng" title="Download the drawing as an image">Save PNG</button>
+          <button type="button" id="savePdf" title="Print or save the plan and marks table as PDF">Save PDF</button>
           <label>Measurements
             <select data-set="dims">
               <option value="all">All</option>
@@ -70,13 +72,13 @@
 
       <section class="card" aria-label="Drilling">
         <h2>Drilling</h2>
-        <p class="hint">From IKEA’s instructions, each board hangs on one rail with two wall screws, 20, 40 or 60 cm apart for the 36, 56 or 76 cm board, so each screw sits 8 cm in from the board’s side edge. Neighbouring boards leave a 5 mm joint (rails 16.5 cm apart side by side, 56.5 cm apart when stacked).</p>
+        <p class="hint">From the board maker’s assembly instructions, each board hangs on one rail with two wall screws, 20, 40 or 60 cm apart for the 36, 56 or 76 cm board, so each screw sits 8 cm in from the board’s side edge. Neighbouring boards leave a 5 mm joint (rails 16.5 cm apart side by side, 56.5 cm apart when stacked).</p>
         <label class="field">Screw holes below board top<input type="number" min="0" step="0.1" data-set="railD"></label>
-        <p class="hint">IKEA doesn’t publish this one, so 4 cm is a placeholder. Before drilling, fit the rail to the back of a board as in step 4 of the instructions, measure from the board’s top edge down to the centre of the rail’s wall-screw holes, and enter it here.</p>
+        <p class="hint">This one is not published, so 4 cm is a placeholder. Before drilling, fit the rail to the back of a board as in step 4 of the instructions, measure from the board’s top edge down to the centre of the rail’s wall-screw holes, and enter it here.</p>
       </section>
 
-      <section class="card" aria-label="Shopping list">
-        <h2>Shopping list</h2>
+      <section class="card" aria-label="Parts list">
+        <h2>Parts list</h2>
         <div id="shop"></div>
       </section>
     </aside>
@@ -89,7 +91,8 @@
   </section>
 
   <footer class="site-foot">
-    <p>Open source under the MIT licence. <a href="https://github.com/yharby/wall-board-planner">Source on GitHub</a>. Not affiliated with IKEA. Always check measurements against the real boards before you drill.</p>
+    <p class="disclaimer"><strong>Disclaimer.</strong> This is an independent, unofficial hobby project made for personal and educational use. It is not affiliated with, endorsed by or sponsored by IKEA or any other company. IKEA and SKÅDIS are trademarks of Inter IKEA Systems B.V. and are named here only to say which boards the default sizes match. Board sizes and screw spacing come from public assembly instructions and may be wrong or out of date. The tool is provided as is, without any warranty, and you use it at your own risk. Always check every measurement against your real boards and wall before you drill.</p>
+    <p>Open source under the MIT licence. <a href="https://github.com/yharby/wall-board-planner">Source on GitHub</a>.</p>
   </footer>
 </div>
 

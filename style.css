@@ -67,6 +67,7 @@ table.marks{border-collapse:collapse;width:100%;font-size:14px;font-variant-nume
 kbd{font:inherit;font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--bg)}
 .site-foot{margin-top:28px;font-size:13px;color:var(--muted)}
 .site-foot a{color:var(--accent)}
+.disclaimer{max-width:110ch;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
 svg text{font-family:"Archivo",system-ui,sans-serif;pointer-events:none}
 /* SVG labels and lines. The drawing is in centimetres, --k is centimetres per
    screen pixel (set by app.js), so these stay the same size on every screen. */
@@ -102,3 +103,19 @@ svg text{font-family:"Archivo",system-ui,sans-serif;pointer-events:none}
   .marks th,.marks td{padding:6px 8px;font-size:13px}
 }
 @media (hover:none){.hint .kbd-only{display:none}}
+
+/* Save PDF uses the print dialog. Keep the drawing, parts list and marks table. */
+@media print{
+  @page{margin:12mm}
+  :root{--bg:#fff;--panel:#fff}
+  body{font-size:11pt}
+  .sub,.tray,.foot .hint,#inspector,aside .card:not([aria-label="Parts list"]),.site-foot p:not(.disclaimer){display:none!important}
+  .app{display:block}
+  .card{border:0}
+  aside{position:static;max-height:none;overflow:visible;display:block}
+  #wall{max-width:100%!important;break-inside:avoid}
+  .tablewrap{overflow:visible}
+  .marks th,.marks td{padding:4px 6px;font-size:9pt;white-space:normal}
+  .below{break-before:page}
+  .disclaimer{font-size:8pt}
+}

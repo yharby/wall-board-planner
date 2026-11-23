@@ -1,6 +1,6 @@
 /* Wall board planner
  * Plain JavaScript, no build step, no dependencies.
- * All product data, prices, colours, presets and defaults come from config.js,
+ * All product data, colours, presets and defaults come from config.js,
  * so forks normally only need to edit that file.
  *
  * Coordinates are in centimetres. x runs from the left wall corner,
@@ -31,7 +31,6 @@ const fmt=n=>String(Math.round(n*100)/100);
 const r05=v=>Math.round(v*4)/4;
 const sz=b=>SIZES[b.s]||SIZES[FIRST_SIZE];
 const screw=b=>sz(b).screw;
-const money=n=>`${CFG.currency} ${n.toLocaleString('en')}`;
 
 let st=null;
 try{const s=localStorage.getItem(KEY);if(s)st=Object.assign(defaults(),JSON.parse(s));}catch(e){}
@@ -160,9 +159,10 @@ function render(){
       let o=`<rect x="${s.x}" y="${sy}" width="${s.w}" height="${s.h}" rx=".6" fill="var(--stor)" stroke="${on?'var(--sel)':'var(--stor2)'}" stroke-width="${on?P(3):P(1)}"/>`;
       for(let j=0;j<n;j++){
         if(j)o+=`<line x1="${s.x}" x2="${s.x+s.w}" y1="${sy+j*step}" y2="${sy+j*step}" stroke="var(--stor2)" stroke-width="${P(1)}"/>`;
+        if(!j&&st.dims!=='off')continue;   // the height label sits where the top handle would be
         o+=`<rect x="${s.x+s.w/2-3}" y="${sy+j*step+step/2-.5}" width="6" height="1" rx=".4" fill="var(--stor2)"/>`;
       }
-      if(st.dims!=='off'){const t=textW(`${fmt(s.h)} tall`,FS.small)<s.w-P(4)?`${fmt(s.h)} tall`:fmt(s.h);o+=txt(s.x+s.w/2,sy+FS.small+P(3),t,'dts');}
+      if(st.dims!=='off'){const t=textW(`${fmt(s.h)} tall`,FS.small)<s.w-P(4)?`${fmt(s.h)} tall`:fmt(s.h);o+=txt(s.x+s.w/2,sy+Math.min(step/2+FS.small*0.35,FS.small+P(3)),t,'dts');}
       g+=`<g class="obj" data-id="${s.id}">${o}</g>`;
     });
   }
@@ -179,7 +179,7 @@ function render(){
     o+=`<text x="${bx+w/2}" y="${by+h/2+nf*0.36}" text-anchor="middle" style="font-size:${nf}px;font-stretch:90%;font-weight:800" fill="${F.t}" opacity=".5">${i+1}</text>`;
     if(textW(`${w}×${h}`,FS.board)<w-P(10))o+=`<text x="${bx+P(5)}" y="${by+h-P(5)}" style="font-size:${FS.board}px;font-stretch:80%;font-weight:700" fill="${F.t}">${w}×${h}</text>`;
     if(st.holes){
-      const X=screw(b),hh=b.y+h-st.railD,hy=Y(hh),showLab=st.dims!=='off'&&(on||(!sel.size&&!compact))&&X>=2*textW('L 000.00',FS.small)+P(10);   // skip when the two labels would collide, the table below has them
+      const X=screw(b),hh=b.y+h-st.railD,hy=Y(hh),showLab=st.dims!=='off'&&(on||(!sel.size&&!compact))&&X+P(8)>=2*textW('L 000.0',FS.small)+P(6);   // skip when the two labels would collide, the table below has them
       [b.x+(w-X)/2,b.x+(w+X)/2].forEach((cx,j)=>{
         o+=`<circle cx="${cx}" cy="${hy}" r="${P(5)}" fill="none" stroke="var(--guide)" stroke-width="${P(1.6)}"/><line x1="${cx-P(8)}" x2="${cx+P(8)}" y1="${hy}" y2="${hy}" stroke="var(--guide)" stroke-width="${P(1)}"/><line x1="${cx}" x2="${cx}" y1="${hy-P(8)}" y2="${hy+P(8)}" stroke="var(--guide)" stroke-width="${P(1)}"/>`;
         if(showLab){const tx=j?cx+P(4):cx-P(4);o+=`<text class="dts halo" y="${hy+FS.small+P(9)}" text-anchor="${j?'end':'start'}" style="fill:var(--guide);font-weight:700"><tspan x="${tx}">L ${fmt(cx)}</tspan><tspan x="${tx}" dy="1.1em">H ${fmt(hh)}</tspan></text>`;}
@@ -256,7 +256,7 @@ function render(){
 
 /* ---------- side panels ---------- */
 function renderTiles(){
-  $('#tiles').innerHTML=Object.entries(SIZES).map(([k,s])=>`<button type="button" class="tile" data-s="${k}" aria-label="Add a ${s.w}×${s.h} board"><span class="pb" style="width:${s.w*0.62}px;height:${s.h*0.62}px"></span><b>${s.w}×${s.h} cm</b><small>${money(s.price)}</small></button>`).join('');
+  $('#tiles').innerHTML=Object.entries(SIZES).map(([k,s])=>`<button type="button" class="tile" data-s="${k}" aria-label="Add a ${s.w}×${s.h} board"><span class="pb" style="width:${s.w*0.62}px;height:${s.h*0.62}px"></span><b>${s.w}×${s.h}</b><small>cm</small></button>`).join('');
 }
 function renderSwatches(){
   $('#swatches').innerHTML=SWATCHES.map(([c,n])=>`<button type="button" class="sw" data-color="${c}" style="background:${c}" aria-label="${n}" title="${n}" aria-pressed="${st.wall.color.toLowerCase()===c.toLowerCase()}"></button>`).join('');
@@ -319,18 +319,43 @@ function renderStatus(){
   $('#warnings').innerHTML=w.map(m=>`<li>${m}</li>`).join('');
 }
 function renderShop(){
-  if(!st.boards.length){$('#shop').innerHTML='<p class="hint">Add boards to see what to buy.</p>';return;}
+  if(!st.boards.length){$('#shop').innerHTML='<p class="hint">Add boards to see what you need.</p>';return;}
   const groups=new Map();
   st.boards.forEach(b=>{const k=b.s+'|'+b.f;groups.set(k,(groups.get(k)||0)+1);});
-  let total=0,unknown=false,rows='';
+  let rows='';
   [...groups.entries()].sort().forEach(([k,n])=>{
-    const [s,f]=k.split('|'),S=SIZES[s]||SIZES[FIRST_SIZE];let price;
-    if(f===CFG.priceFinish){price=money(S.price*n);total+=S.price*n;}else{price='check price';unknown=true;}
-    rows+=`<tr><td>${n} × <a href="${S.url}" target="_blank" rel="noopener">${S.name}</a>, ${(FIN[f]||FIN[FIRST_FIN]).name.toLowerCase()}</td><td>${price}</td></tr>`;
+    const [s,f]=k.split('|'),S=SIZES[s]||SIZES[FIRST_SIZE],name=S.url?`<a href="${S.url}" target="_blank" rel="noopener">${S.name}</a>`:S.name;
+    rows+=`<tr><td>${name}, ${(FIN[f]||FIN[FIRST_FIN]).name.toLowerCase()}</td><td>${n}</td></tr>`;
   });
-  rows+=`<tr class="total"><td>Total${unknown?` (${FIN[CFG.priceFinish].name.toLowerCase()} boards)`:''}</td><td>${money(total)}</td></tr>`;
-  $('#shop').innerHTML=`<table class="shop">${rows}</table><p class="hint">${CFG.priceNote}</p>`;
+  rows+=`<tr><td>Wall screws and plugs</td><td>${st.boards.length*2}</td></tr>`;
+  $('#shop').innerHTML=`<table class="shop">${rows}</table><p class="hint">Two screws per board. Pick screws and plugs that suit your wall.</p>`;
 }
+
+/* ---------- export ----------
+ * PDF goes through the browser print dialog (choose "Save as PDF"), which keeps
+ * the drawing sharp and includes the marks table. PNG copies the drawing's
+ * computed styles inline so it renders the same outside the page.
+ */
+function exportPng(){
+  const clone=svg.cloneNode(true),src=svg.querySelectorAll('*'),dst=clone.querySelectorAll('*');
+  const props=['fill','fill-opacity','stroke','stroke-width','stroke-dasharray','stroke-linejoin','opacity','font-family','font-size','font-weight','text-anchor','paint-order'];
+  const fixUrl=v=>v.replace(/url\(["']?[^#"')]*(#[^"')]+)["']?\)/,'url($1)');
+  src.forEach((el,i)=>{const cs=getComputedStyle(el);dst[i].setAttribute('style',props.map(p=>`${p}:${fixUrl(cs.getPropertyValue(p))}`).join(';'));});
+  const vb=svg.viewBox.baseVal,r=svg.getBoundingClientRect(),s=Math.max(2,2400/r.width),w=Math.round(r.width*s),h=Math.round(r.height*s);
+  const bg=getComputedStyle(document.documentElement).getPropertyValue('--panel').trim()||'#fff';
+  clone.setAttribute('width',w);clone.setAttribute('height',h);clone.removeAttribute('style');
+  clone.insertAdjacentHTML('afterbegin',`<rect x="${vb.x}" y="${vb.y}" width="${vb.width}" height="${vb.height}" fill="${bg}"/>`);
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`wall-plan-${st.wall.w}x${st.wall.h}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);},'image/png');
+  };
+  img.onerror=()=>{$('#status').textContent='Could not create the image here, try Save PDF instead.';};
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
+}
+function exportPdf(){sel.clear();refresh();setTimeout(()=>window.print(),50);}
+
 function renderTable(){
   const W=st.wall.w;
   let h=`<thead><tr><th>Board</th><th>Size</th><th>Colour</th><th>Left edge from left corner</th><th>Right edge from left corner</th><th>Gap to right corner</th><th>Bottom from floor</th><th>Top from floor</th>${st.desk.on?'<th>Bottom above desk</th>':''}<th>Drill hole 1 from left</th><th>Drill hole 2 from left</th><th>Drill holes from floor</th></tr></thead><tbody>`;
@@ -496,6 +521,7 @@ $('#swatches').addEventListener('click',e=>{const t=e.target.closest('[data-colo
 $('#addStor').addEventListener('click',()=>op(()=>{const s={id:newId('s'),x:r05(st.wall.w/2-15),w:30,h:30};st.storage.push(s);sel=new Set([s.id]);}));
 $('#preset').addEventListener('change',e=>{const v=e.target.value;e.target.value='';if(v)preset(v);});
 $('#undo').addEventListener('click',undo);$('#redo').addEventListener('click',redo);
+$('#savePng').addEventListener('click',exportPng);$('#savePdf').addEventListener('click',exportPdf);
 
 const insp=$('#inspector');
 insp.addEventListener('focusin',e=>{if(e.target.dataset.ip)e.target._pre=JSON.stringify(st);});
