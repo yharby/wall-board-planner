@@ -66,7 +66,7 @@ Your copy will be live at `https://<your-user>.github.io/wall-board-planner/` a 
 
 ## Before you drill
 
-The screw height below each board's top edge is not published, so the planner uses 4 cm as a placeholder. Fit the rail to a real board, measure it, and enter it in the Drilling panel. Always check measurements against the real boards.
+The assembly instructions give the screw spacing (20, 40 or 60 cm) and the rail spacing (16.5 cm side by side, 56.5 cm stacked), but not how far the screw holes sit below the board's top edge. The planner uses 6 cm, read off the step 4 drawing. There the rail is fixed through the second slot of a top column, and the slot rows look to be 2 cm apart with the first one 2 cm below the edge. No one online seems to publish a measured value, so fit the rail to a real board, measure from the top edge to the centre of the rail's wall-screw holes, and enter it in the Drilling panel. Always check measurements against the real boards.
 
 ## Disclaimer
 

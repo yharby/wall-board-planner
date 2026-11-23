@@ -58,7 +58,11 @@ window.WALL_CONFIG = {
     wall: { w: 326, h: 285, color: '#A4A178' },
     desk: { on: true, h: 73 },
     clear: 5,             // gap kept above the tallest desk item
-    railD: 4,             // screw holes measured down from each board's top edge
+    // Screw holes measured down from each board's top edge. Not printed in the
+    // instructions. 6 is read off the step 4 drawing, where the rail is fixed
+    // through the second slot of a top column (slot rows every 2 cm, the first
+    // 2 cm below the edge) and the wall-screw holes sit on the same line.
+    railD: 6,
     storage: [
       { id: 's1', x: 0,   w: 40, h: 56 },
       { id: 's2', x: 286, w: 40, h: 50 }

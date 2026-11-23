@@ -35,6 +35,8 @@ const screw=b=>sz(b).screw;
 let st=null;
 try{const s=localStorage.getItem(KEY);if(s)st=Object.assign(defaults(),JSON.parse(s));}catch(e){}
 if(!st)st=defaults();
+// Saves from before v2 still carry the old 4 cm placeholder for the screw height.
+if(!st.v){if(st.railD===4)st.railD=defaults().railD;st.v=2;}
 let sel=new Set(),hist=[],fut=[],drag=null,pend=null,guides=[];
 
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
