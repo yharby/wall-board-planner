@@ -4,9 +4,13 @@
  * pegboard system or wall. app.js reads everything from
  * window.WALL_CONFIG and has no hard-coded product data.
  *
- * All lengths are in centimetres.
+ * All lengths are in centimetres, even when the page shows inches.
  */
 window.WALL_CONFIG = {
+
+  // Units a first-time visitor sees, 'metric' or 'imperial'. Visitors can
+  // switch at the top of the page and their choice is kept in the browser.
+  units: 'metric',
 
   // Board sizes offered in the tray.
   //   w, h    board width and height

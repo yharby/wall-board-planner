@@ -18,6 +18,7 @@ A personal hobby project made for my own use and for learning. See the disclaime
 - Parts list with the number of boards and wall screws
 - Save PNG downloads the drawing as an image, Save PDF opens the print dialog with the drawing, parts list and marks table
 - Works on phones and tablets. Labels keep the same screen size and the wall scales to fit
+- Theme (System, Light or Dark) and units (Metric or Imperial) switches at the top. Imperial shows inches rounded to 1/16, while the maths stays in centimetres
 - Undo and redo, keyboard shortcuts, and your layout is saved in the browser
 
 ## Make it your own

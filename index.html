@@ -10,10 +10,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>/* apply the saved theme before first paint */try{var t=JSON.parse(localStorage.getItem('wall-planner-prefs')||'{}').theme;if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body>
 <div class="wrap">
-  <h1>Pegboard wall planner</h1>
+  <header class="top">
+    <h1>Pegboard wall planner</h1>
+    <div class="prefs" id="prefs" aria-label="Display settings">
+      <div class="seg" role="group" aria-label="Theme">
+        <span class="seg-l">Theme</span>
+        <button type="button" data-pref="theme" data-v="system">System</button>
+        <button type="button" data-pref="theme" data-v="light">Light</button>
+        <button type="button" data-pref="theme" data-v="dark">Dark</button>
+      </div>
+      <div class="seg" role="group" aria-label="Units">
+        <span class="seg-l">Units</span>
+        <button type="button" data-pref="units" data-v="metric">Metric</button>
+        <button type="button" data-pref="units" data-v="imperial">Imperial</button>
+      </div>
+    </div>
+  </header>
   <p class="sub">Drag boards from the tray onto your wall. They snap to the wall edges, the centre line and each other, and the measurements update as you move them.</p>
 
   <div class="app">
@@ -46,7 +62,7 @@
       <div class="foot">
         <p id="status"></p>
         <ul id="warnings"></ul>
-        <p class="hint">Tap a tile to add a board next to the others, or drag it to an exact spot. Drag a board to move it, tap it to see its exact gaps and drill marks. <span class="kbd-only">Shift-click to select several. Hold <kbd>Alt</kbd> while dragging to turn off snapping. Arrow keys move by 1 cm (<kbd>Shift</kbd> for 10 cm), <kbd>Delete</kbd> removes, <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicates.</span></p>
+        <p class="hint">Tap a tile to add a board next to the others, or drag it to an exact spot. Drag a board to move it, tap it to see its exact gaps and drill marks. <span class="kbd-only">Shift-click to select several. Hold <kbd>Alt</kbd> while dragging to turn off snapping. Arrow keys move by <span data-m="1 cm" data-i="1/2 in">1 cm</span> (<kbd>Shift</kbd> for <span data-m="10 cm" data-i="5 in">10 cm</span>), <kbd>Delete</kbd> removes, <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicates.</span></p>
       </div>
     </section>
 
@@ -57,24 +73,24 @@
 
       <section class="card" aria-label="Wall and desk">
         <h2>Wall and desk</h2>
-        <label class="field">Wall width (cm)<input type="number" min="50" step="0.5" data-set="wall.w"></label>
-        <label class="field">Wall height (cm)<input type="number" min="100" step="0.5" data-set="wall.h"></label>
+        <label class="field"><span>Wall width (<span data-unit>cm</span>)</span><input type="number" data-len data-min="50" data-step="0.5" data-set="wall.w"></label>
+        <label class="field"><span>Wall height (<span data-unit>cm</span>)</span><input type="number" data-len data-min="100" data-step="0.5" data-set="wall.h"></label>
         <div class="field stack">Wall colour
           <div class="swatches" id="swatches"></div>
           <input type="color" data-set="wall.color" aria-label="Custom wall colour">
         </div>
         <label class="check"><input type="checkbox" data-set="desk.on"> Desk under the boards</label>
-        <label class="field">Desk top from floor<input type="number" min="30" step="0.5" data-set="desk.h"></label>
-        <label class="field">Gap above desk items<input type="number" min="0" step="0.5" data-set="clear"></label>
+        <label class="field"><span>Desk top from floor (<span data-unit>cm</span>)</span><input type="number" data-len data-min="30" data-step="0.5" data-set="desk.h"></label>
+        <label class="field"><span>Gap above desk items (<span data-unit>cm</span>)</span><input type="number" data-len data-min="0" data-step="0.5" data-set="clear"></label>
         <p class="hint">Drawer units are the light boxes on the desk. Drag them sideways to where they really stand, then click one to change its size.</p>
         <div class="btns"><button type="button" id="addStor">Add desk item</button></div>
       </section>
 
       <section class="card" aria-label="Drilling">
         <h2>Drilling</h2>
-        <p class="hint">From the board maker’s assembly instructions, each board hangs on one rail with two wall screws, 20, 40 or 60 cm apart for the 36, 56 or 76 cm board, so each screw sits 8 cm in from the board’s side edge. Neighbouring boards leave a 5 mm joint (rails 16.5 cm apart side by side, 56.5 cm apart when stacked).</p>
-        <label class="field">Screw holes below board top<input type="number" min="0" step="0.1" data-set="railD"></label>
-        <p class="hint">This one is not printed in the instructions. The 6 cm default is read off the step 4 drawing, where the rail is fixed through the slot about 6 cm below the board’s top edge. Before drilling, fit the rail to a board, measure from the top edge down to the centre of the rail’s wall-screw holes, and enter it here.</p>
+        <p class="hint">From the board maker’s assembly instructions, each board hangs on one rail with two wall screws, <span data-cm="20">20 cm</span>, <span data-cm="40">40 cm</span> or <span data-cm="60">60 cm</span> apart for the 36, 56 or 76 cm board, so each screw sits <span data-cm="8">8 cm</span> from the board’s side edge. Neighbouring boards leave a <span data-cm="0.5">0.5 cm</span> joint (rails <span data-cm="16.5">16.5 cm</span> apart side by side, <span data-cm="56.5">56.5 cm</span> apart when stacked).</p>
+        <label class="field"><span>Screw holes below board top (<span data-unit>cm</span>)</span><input type="number" data-len data-min="0" data-step="0.1" data-set="railD"></label>
+        <p class="hint">This one is not printed in the instructions. The <span data-cm="6">6 cm</span> default is read off the step 4 drawing, where the rail is fixed through the slot about <span data-cm="6">6 cm</span> below the board’s top edge. Before drilling, fit the rail to a board, measure from the top edge down to the centre of the rail’s wall-screw holes, and enter it here.</p>
       </section>
 
       <section class="card" aria-label="Parts list">
@@ -86,7 +102,7 @@
 
   <section class="below">
     <h2>Marks for the wall</h2>
-    <p class="lede">Outer edges of each board, measured from the left wall corner and from the floor. The bold columns are the screw holes to drill.</p>
+    <p class="lede">Outer edges of each board, measured from the left wall corner and from the floor. The bold columns are the screw holes to drill. <span data-m="All lengths are in centimetres." data-i="All lengths are in inches, rounded to the nearest 1/16.">All lengths are in centimetres.</span></p>
     <div class="card tablewrap"><table class="marks" id="table"></table></div>
   </section>
 

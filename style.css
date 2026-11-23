@@ -8,6 +8,16 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system
 .wrap{max-width:1720px;margin:0 auto;padding:20px clamp(10px,2.5vw,28px) 56px}
 h1{font-stretch:118%;font-weight:800;font-size:clamp(24px,3.6vw,38px);letter-spacing:-.01em;line-height:1.1;margin:0 0 4px}
 .sub{color:var(--muted);margin:0;max-width:80ch}
+/* title row with the theme and units settings */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin:0 0 4px}
+.top h1{margin:0}
+.prefs{display:flex;flex-wrap:wrap;gap:8px 14px}
+.seg{display:inline-flex;align-items:center;gap:0}
+.seg-l{font-size:12.5px;color:var(--muted);margin-right:8px}
+.seg button{border-radius:0;margin-left:-1px;padding:5px 11px;font-size:13px}
+.seg button:first-of-type{border-radius:6px 0 0 6px;margin-left:0}
+.seg button:last-of-type{border-radius:0 6px 6px 0}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel);position:relative;z-index:1}
 .app{display:grid;gap:16px;margin-top:16px}
 @media (min-width:1060px){.app{grid-template-columns:minmax(0,1fr) 320px;align-items:start}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px}
@@ -93,6 +103,8 @@ svg text{font-family:"Archivo",system-ui,sans-serif;pointer-events:none}
   .tile{flex:1;padding:6px 4px}
   .tools{margin-left:0;width:100%;gap:8px}
   .tools label{font-size:14px}
+  .prefs{width:100%;justify-content:space-between}
+  .seg button{padding:7px 10px;font-size:13.5px}
   .canvas{padding:2px}
   .foot{padding:4px 10px 10px}
   .field{grid-template-columns:1fr 104px}
@@ -107,9 +119,9 @@ svg text{font-family:"Archivo",system-ui,sans-serif;pointer-events:none}
 /* Save PDF uses the print dialog. Keep the drawing, parts list and marks table. */
 @media print{
   @page{margin:12mm}
-  :root{--bg:#fff;--panel:#fff}
+  html:root:root{color-scheme:light;--bg:#fff;--panel:#fff;--ink:#1B1F23;--muted:#5A636A;--line:#D3D8D5;--dim:#2350B0;--sel:#0E7C6B;--guide:#D12F8A;--warn:#BE3A2C;--accent:#2350B0;--floor:#8C7F6E;--desk:#C9A46E;--desk2:#A8834C;--leg:#6F757A;--stor:#F7F7F5;--stor2:#A3A8A5}
   body{font-size:11pt}
-  .sub,.tray,.foot .hint,#inspector,aside .card:not([aria-label="Parts list"]),.site-foot p:not(.disclaimer){display:none!important}
+  .prefs,.sub,.tray,.foot .hint,#inspector,aside .card:not([aria-label="Parts list"]),.site-foot p:not(.disclaimer){display:none!important}
   .app{display:block}
   .card{border:0}
   aside{position:static;max-height:none;overflow:visible;display:block}

@@ -27,10 +27,31 @@ function defaults(){
 /* ---------- state ---------- */
 const $=q=>document.querySelector(q);
 const svg=$('#wall');
-const fmt=n=>String(Math.round(n*100)/100);
 const r05=v=>Math.round(v*4)/4;
 const sz=b=>SIZES[b.s]||SIZES[FIRST_SIZE];
 const screw=b=>sz(b).screw;
+
+/* ---------- display settings (theme, units) ----------
+ * Kept apart from the plan so they never enter undo history or saved layouts.
+ * All maths stays in centimetres. Imperial only changes what is shown and
+ * typed, with inches rounded to the nearest 1/16 like a tape measure.
+ */
+const PREF_KEY='wall-planner-prefs';
+const prefs={theme:'system',units:CFG.units==='imperial'?'imperial':'metric'};
+try{Object.assign(prefs,JSON.parse(localStorage.getItem(PREF_KEY)||'{}'));}catch(e){}
+const IN=2.54;
+const IMP=()=>prefs.units==='imperial';
+const UNIT=()=>IMP()?'in':'cm';
+function inch(v){
+  const t=Math.round(Math.abs(v)/IN*16),w=Math.floor(t/16);let n=t%16,d=16;
+  while(n&&n%2===0){n/=2;d/=2;}
+  return (v<0&&t?'-':'')+(n?(w?w+' ':'')+n+'/'+d:String(w));
+}
+const fmt=n=>IMP()?inch(n):String(Math.round(n*100)/100);   // a length, in the current unit
+const cm=n=>`${fmt(n)} ${UNIT()}`;                            // the same, with its unit
+const sizeL=(w,h)=>`${fmt(w)}×${fmt(h)}`;
+const toU=v=>IMP()?Math.round(v/IN*100)/100:v;               // value shown in a number field
+const fromU=v=>IMP()?v*IN:v;                                  // value typed in a number field
 
 let st=null;
 try{const s=localStorage.getItem(KEY);if(s)st=Object.assign(defaults(),JSON.parse(s));}catch(e){}
@@ -56,11 +77,11 @@ function redo(){if(!fut.length)return;hist.push(JSON.stringify(st));st=JSON.pars
 function issues(b){
   const W=st.wall.w,H=st.wall.h,{w,h}=sz(b),out=[];
   if(b.x<-0.05||b.x+w>W+0.05)out.push('runs past the wall edge');
-  if(b.y+h>H+0.05)out.push(`goes ${fmt(b.y+h-H)} cm past the ceiling`);
+  if(b.y+h>H+0.05)out.push(`goes ${cm(b.y+h-H)} past the ceiling`);
   if(b.y<-0.05)out.push('goes below the floor');
   if(st.desk.on){
     if(b.y<st.desk.h-0.05&&b.y+h>st.desk.h-3)out.push('dips behind the desk top');
-    else st.storage.forEach(s=>{if(b.x<s.x+s.w-0.05&&b.x+w>s.x+0.05&&b.y<st.desk.h+s.h-0.05&&b.y+h>st.desk.h)out.push(`hits the ${fmt(s.h)} cm desk item`);});
+    else st.storage.forEach(s=>{if(b.x<s.x+s.w-0.05&&b.x+w>s.x+0.05&&b.y<st.desk.h+s.h-0.05&&b.y+h>st.desk.h)out.push(`hits the ${cm(s.h)} desk item`);});
   }
   st.boards.forEach(o=>{if(o===b)return;const q=sz(o);if(b.x<o.x+q.w-0.05&&b.x+w>o.x+0.05&&b.y<o.y+q.h-0.05&&b.y+h>o.y+0.05)out.push(`overlaps board ${st.boards.indexOf(o)+1}`);});
   return out;
@@ -144,7 +165,7 @@ function render(){
   if(R!=null&&st.dims!=='off'&&R<H){
     g+=`<line x1="0" x2="${W}" y1="${Y(R)}" y2="${Y(R)}" stroke="var(--sel)" stroke-width="${P(1.2)}" stroke-dasharray="${P(6)} ${P(4)}" opacity=".85"/>`;
     // put the label in the widest stretch of the line that no board covers
-    const lab=compact?`${fmt(R)} clears desk items`:`${fmt(R)} cm, lowest edge that clears the desk items`,top=R+FS.small+P(6);
+    const lab=compact?`${fmt(R)} clears desk items`:`${cm(R)}, lowest edge that clears the desk items`,top=R+FS.small+P(6);
     const cov=st.boards.filter(b=>b.y<top&&b.y+sz(b).h>R).map(b=>[b.x,b.x+sz(b).w]).sort((a,c)=>a[0]-c[0]);
     let best=null,from=0;
     [...cov,[W,W]].forEach(([a,c])=>{if(a-from>(best?best[1]-best[0]:0))best=[from,a];from=Math.max(from,c);});
@@ -179,9 +200,9 @@ function render(){
     // big board number, sized to the board itself
     const nf=Math.min(h*0.42,w*0.55);
     o+=`<text x="${bx+w/2}" y="${by+h/2+nf*0.36}" text-anchor="middle" style="font-size:${nf}px;font-stretch:90%;font-weight:800" fill="${F.t}" opacity=".5">${i+1}</text>`;
-    if(textW(`${w}×${h}`,FS.board)<w-P(10))o+=`<text x="${bx+P(5)}" y="${by+h-P(5)}" style="font-size:${FS.board}px;font-stretch:80%;font-weight:700" fill="${F.t}">${w}×${h}</text>`;
+    if(textW(sizeL(w,h),FS.board)<w-P(10))o+=`<text x="${bx+P(5)}" y="${by+h-P(5)}" style="font-size:${FS.board}px;font-stretch:80%;font-weight:700" fill="${F.t}">${sizeL(w,h)}</text>`;
     if(st.holes){
-      const X=screw(b),hh=b.y+h-st.railD,hy=Y(hh),showLab=st.dims!=='off'&&(on||(!sel.size&&!compact))&&X+P(8)>=2*textW('L 000.0',FS.small)+P(6);   // skip when the two labels would collide, the table below has them
+      const X=screw(b),hh=b.y+h-st.railD,hy=Y(hh),showLab=st.dims!=='off'&&(on||(!sel.size&&!compact))&&X+P(8)>=2*textW(IMP()?'L 000 00/00':'L 000.0',FS.small)+P(6);   // skip when the two labels would collide, the table below has them
       [b.x+(w-X)/2,b.x+(w+X)/2].forEach((cx,j)=>{
         o+=`<circle cx="${cx}" cy="${hy}" r="${P(5)}" fill="none" stroke="var(--guide)" stroke-width="${P(1.6)}"/><line x1="${cx-P(8)}" x2="${cx+P(8)}" y1="${hy}" y2="${hy}" stroke="var(--guide)" stroke-width="${P(1)}"/><line x1="${cx}" x2="${cx}" y1="${hy-P(8)}" y2="${hy+P(8)}" stroke="var(--guide)" stroke-width="${P(1)}"/>`;
         if(showLab){const tx=j?cx+P(4):cx-P(4);o+=`<text class="dts halo" y="${hy+FS.small+P(9)}" text-anchor="${j?'end':'start'}" style="fill:var(--guide);font-weight:700"><tspan x="${tx}">L ${fmt(cx)}</tspan><tspan x="${tx}" dy="1.1em">H ${fmt(hh)}</tspan></text>`;}
@@ -194,8 +215,8 @@ function render(){
   guides.forEach(q=>{g+=q.v!=null?`<line class="guide" x1="${q.v}" x2="${q.v}" y1="${-P(8)}" y2="${H+P(8)}"/>`:`<line class="guide" x1="${-P(8)}" x2="${W+P(8)}" y1="${Y(q.h)}" y2="${Y(q.h)}"/>`;});
 
   if(st.dims!=='off'){
-    g+=hdim(0,W,-P(16)-bands.length*ROW,`${fmt(W)} wall width`);
-    g+=vdim(0,H,-pad.l+FS.dim+P(10),`${fmt(H)} wall height`);
+    g+=hdim(0,W,-P(16)-bands.length*ROW,`${cm(W)} wall width`);
+    g+=vdim(0,H,-pad.l+FS.dim+P(10),`${cm(H)} wall height`);
     if(st.dims==='all'&&st.boards.length){
       // horizontal chains, one per band of boards that share height
       bands.forEach((band,i)=>{
@@ -258,7 +279,7 @@ function render(){
 
 /* ---------- side panels ---------- */
 function renderTiles(){
-  $('#tiles').innerHTML=Object.entries(SIZES).map(([k,s])=>`<button type="button" class="tile" data-s="${k}" aria-label="Add a ${s.w}×${s.h} board"><span class="pb" style="width:${s.w*0.62}px;height:${s.h*0.62}px"></span><b>${s.w}×${s.h}</b><small>cm</small></button>`).join('');
+  $('#tiles').innerHTML=Object.entries(SIZES).map(([k,s])=>`<button type="button" class="tile" data-s="${k}" aria-label="Add a ${s.w}×${s.h} board"><span class="pb" style="width:${s.w*0.62}px;height:${s.h*0.62}px"></span><b>${s.w}×${s.h}</b><small>${IMP()?sizeL(s.w,s.h)+' in':'cm'}</small></button>`).join('');
 }
 function renderSwatches(){
   $('#swatches').innerHTML=SWATCHES.map(([c,n])=>`<button type="button" class="sw" data-color="${c}" style="background:${c}" aria-label="${n}" title="${n}" aria-pressed="${st.wall.color.toLowerCase()===c.toLowerCase()}"></button>`).join('');
@@ -275,8 +296,8 @@ function renderInspector(){
     h=`<h2>Board ${i}</h2>
     <label class="field">Size<select data-ip="s">${sizeOpts(b.s)}</select></label>
     <label class="field">Colour<select data-ip="f">${finOpts(b.f)}</select></label>
-    <label class="field">Left edge from left corner<input type="number" step="0.25" data-ip="x" value="${b.x}"></label>
-    <label class="field">Bottom edge from floor<input type="number" step="0.25" data-ip="y" value="${b.y}"></label>
+    <label class="field">Left edge from left corner (${UNIT()})<input type="number" step="${IMP()?0.125:0.25}" data-ip="x" value="${toU(b.x)}"></label>
+    <label class="field">Bottom edge from floor (${UNIT()})<input type="number" step="${IMP()?0.125:0.25}" data-ip="y" value="${toU(b.y)}"></label>
     <div class="btns grid"><button type="button" data-act="center">Centre on wall</button>${R!=null?'<button type="button" data-act="rec">Lift above desk items</button>':''}<button type="button" data-act="dup">Duplicate</button><button type="button" data-act="del">Delete</button></div>`;
   }else if(bs.length){
     h=`<h2>${bs.length} boards selected</h2>
@@ -291,9 +312,9 @@ function renderInspector(){
   }else{
     const s=ss[0];
     h=`<h2>Desk item</h2>
-    <label class="field">Left edge from left corner<input type="number" step="0.5" data-ip="x" value="${s.x}"></label>
-    <label class="field">Width<input type="number" step="0.5" min="1" data-ip="w" value="${s.w}"></label>
-    <label class="field">Height above desk<input type="number" step="0.5" min="1" data-ip="h" value="${s.h}"></label>
+    <label class="field">Left edge from left corner (${UNIT()})<input type="number" step="${IMP()?0.25:0.5}" data-ip="x" value="${toU(s.x)}"></label>
+    <label class="field">Width (${UNIT()})<input type="number" step="${IMP()?0.25:0.5}" min="0.5" data-ip="w" value="${toU(s.w)}"></label>
+    <label class="field">Height above desk (${UNIT()})<input type="number" step="${IMP()?0.25:0.5}" min="0.5" data-ip="h" value="${toU(s.h)}"></label>
     <div class="btns"><button type="button" data-act="del">Delete</button></div>`;
   }
   $('#inspector').innerHTML=h;
@@ -301,20 +322,20 @@ function renderInspector(){
 function fillInspector(){
   const one=sel.size===1?(boardById([...sel][0])||storById([...sel][0])):null;
   if(!one)return;
-  document.querySelectorAll('#inspector [data-ip]').forEach(el=>{if(el===document.activeElement)return;const k=el.dataset.ip;if(k in one)el.value=one[k];});
+  document.querySelectorAll('#inspector [data-ip]').forEach(el=>{if(el===document.activeElement)return;const k=el.dataset.ip;if(k in one)el.value=k==='s'||k==='f'?one[k]:toU(one[k]);});
 }
 function renderStatus(){
   const W=st.wall.w,bs=selBoards();let t='';
   if(bs.length===1){
     const b=bs[0],{w,h}=sz(b);
-    t=`Board ${st.boards.indexOf(b)+1}, ${w}×${h} cm: left edge ${fmt(b.x)} cm from the left corner, right edge ${fmt(W-b.x-w)} cm from the right corner. Bottom ${fmt(b.y)} cm from the floor${st.desk.on?` (${fmt(b.y-st.desk.h)} cm above the desk)`:''}, top ${fmt(b.y+h)} cm.${st.holes?` Drill at ${fmt(b.x+(w-screw(b))/2)} and ${fmt(b.x+(w+screw(b))/2)} cm from the left corner, both ${fmt(b.y+h-st.railD)} cm from the floor.`:''}`;
+    t=`Board ${st.boards.indexOf(b)+1}, ${sizeL(w,h)} ${UNIT()}. Left edge ${cm(b.x)} from the left corner, right edge ${cm(W-b.x-w)} from the right corner. Bottom ${cm(b.y)} from the floor${st.desk.on?` (${cm(b.y-st.desk.h)} above the desk)`:''}, top ${cm(b.y+h)}.${st.holes?` Drill at ${fmt(b.x+(w-screw(b))/2)} and ${cm(b.x+(w+screw(b))/2)} from the left corner, both ${cm(b.y+h-st.railD)} from the floor.`:''}`;
   }else if(bs.length>1){
     const l=Math.min(...bs.map(b=>b.x)),r=Math.max(...bs.map(b=>b.x+sz(b).w));
-    t=`${bs.length} boards selected, spanning ${fmt(r-l)} cm: ${fmt(l)} cm from the left corner and ${fmt(W-r)} cm from the right.`;
+    t=`${bs.length} boards selected, spanning ${cm(r-l)}. They sit ${cm(l)} from the left corner and ${cm(W-r)} from the right.`;
   }else if(st.boards.length){
     const l=Math.min(...st.boards.map(b=>b.x)),r=Math.max(...st.boards.map(b=>b.x+sz(b).w));
     const lo=Math.min(...st.boards.map(b=>b.y)),hi=Math.max(...st.boards.map(b=>b.y+sz(b).h));
-    t=`${st.boards.length} board${st.boards.length>1?'s':''} spanning ${fmt(r-l)} cm (${fmt(l)} cm free on the left, ${fmt(W-r)} cm on the right), from ${fmt(lo)} to ${fmt(hi)} cm above the floor.`;
+    t=`${st.boards.length} board${st.boards.length>1?'s':''} spanning ${cm(r-l)} (${cm(l)} free on the left, ${cm(W-r)} on the right), from ${fmt(lo)} to ${cm(hi)} above the floor.`;
   }else t='The wall is empty. Drag a board from the tray, or click one to add it.';
   $('#status').textContent=t;
   const w=[];st.boards.forEach((b,i)=>issues(b).forEach(m=>w.push(`Board ${i+1} ${m}.`)));
@@ -361,7 +382,7 @@ function exportPdf(){sel.clear();refresh();setTimeout(()=>window.print(),50);}
 function renderTable(){
   const W=st.wall.w;
   let h=`<thead><tr><th>Board</th><th>Size</th><th>Colour</th><th>Left edge from left corner</th><th>Right edge from left corner</th><th>Gap to right corner</th><th>Bottom from floor</th><th>Top from floor</th>${st.desk.on?'<th>Bottom above desk</th>':''}<th>Drill hole 1 from left</th><th>Drill hole 2 from left</th><th>Drill holes from floor</th></tr></thead><tbody>`;
-  st.boards.forEach((b,i)=>{const {w,h:hh}=sz(b);h+=`<tr${issues(b).length?' class="bad"':''}><td>${i+1}</td><td>${w}×${hh}</td><td>${(FIN[b.f]||FIN[FIRST_FIN]).name}</td><td>${fmt(b.x)}</td><td>${fmt(b.x+w)}</td><td>${fmt(W-b.x-w)}</td><td>${fmt(b.y)}</td><td>${fmt(b.y+hh)}</td>${st.desk.on?`<td>${fmt(b.y-st.desk.h)}</td>`:''}<td><b>${fmt(b.x+(w-screw(b))/2)}</b></td><td><b>${fmt(b.x+(w+screw(b))/2)}</b></td><td><b>${fmt(b.y+hh-st.railD)}</b></td></tr>`;});
+  st.boards.forEach((b,i)=>{const {w,h:hh}=sz(b);h+=`<tr${issues(b).length?' class="bad"':''}><td>${i+1}</td><td>${sizeL(w,hh)}</td><td>${(FIN[b.f]||FIN[FIRST_FIN]).name}</td><td>${fmt(b.x)}</td><td>${fmt(b.x+w)}</td><td>${fmt(W-b.x-w)}</td><td>${fmt(b.y)}</td><td>${fmt(b.y+hh)}</td>${st.desk.on?`<td>${fmt(b.y-st.desk.h)}</td>`:''}<td><b>${fmt(b.x+(w-screw(b))/2)}</b></td><td><b>${fmt(b.x+(w+screw(b))/2)}</b></td><td><b>${fmt(b.y+hh-st.railD)}</b></td></tr>`;});
   if(!st.boards.length)h+=`<tr><td colspan="9">No boards on the wall yet.</td></tr>`;
   $('#table').innerHTML=h+'</tbody>';
 }
@@ -371,7 +392,10 @@ function refresh(){render();renderSide();}
 function syncSettings(){
   document.querySelectorAll('[data-set]').forEach(el=>{
     const [a,b]=el.dataset.set.split('.');const v=b?st[a][b]:st[a];
-    if(el.type==='checkbox')el.checked=!!v;else el.value=v;
+    if(el.type==='checkbox')el.checked=!!v;
+    else if(el.dataset.len!=null){   // length fields: shown and typed in the current unit
+      el.value=toU(v);el.step=IMP()?'0.125':el.dataset.step;el.min=IMP()?String(Math.round(el.dataset.min/IN*100)/100):el.dataset.min;
+    }else el.value=v;
   });
   const dh=document.querySelector('[data-set="desk.h"]'),cl=document.querySelector('[data-set="clear"]');
   dh.disabled=cl.disabled=!st.desk.on;$('#addStor').disabled=!st.desk.on;
@@ -514,7 +538,7 @@ $('#tiles').addEventListener('keydown',e=>{const t=e.target.closest('[data-s]');
 document.querySelectorAll('[data-set]').forEach(el=>{
   const path=el.dataset.set.split('.');
   const set=v=>{if(path[1])st[path[0]][path[1]]=v;else st[path[0]]=v;};
-  const val=()=>el.type==='checkbox'?el.checked:el.type==='number'?parseFloat(el.value):el.value;
+  const val=()=>el.type==='checkbox'?el.checked:el.type==='number'?(el.dataset.len!=null?fromU(parseFloat(el.value)):parseFloat(el.value)):el.value;
   el.addEventListener('focus',()=>{el._pre=JSON.stringify(st);});
   el.addEventListener('input',()=>{const v=val();if(el.type==='number'&&isNaN(v))return;if(el.type==='checkbox'||el.tagName==='SELECT')return;set(v);render();renderStatus();renderTable();});
   el.addEventListener('change',()=>{const v=val();if(el.type==='number'&&isNaN(v))return;const pre=el._pre||JSON.stringify(st);set(v);commit(pre);el._pre=JSON.stringify(st);syncSettings();refresh();});
@@ -532,7 +556,7 @@ insp.addEventListener('input',e=>{
   const v=parseFloat(el.value);if(isNaN(v))return;
   const one=boardById([...sel][0])||storById([...sel][0]);if(!one)return;
   if((k==='w'||k==='h')&&v<=0)return;
-  one[k]=v;render();renderStatus();renderTable();
+  one[k]=fromU(v);render();renderStatus();renderTable();
 });
 insp.addEventListener('change',e=>{
   const el=e.target,k=el.dataset.ip;if(!k)return;
@@ -553,13 +577,29 @@ document.addEventListener('keydown',e=>{
   if(mod&&e.key.toLowerCase()==='d'){e.preventDefault();act('dup');return;}
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();act('del');return;}
   if(e.key==='Escape'){sel.clear();refresh();return;}
-  const step=e.shiftKey?10:1,mv={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,step],ArrowDown:[0,-step]}[e.key];
-  if(mv){e.preventDefault();op(()=>{selBoards().forEach(b=>{b.x=r05(b.x+mv[0]);b.y=r05(b.y+mv[1]);});selStor().forEach(s=>{s.x=r05(s.x+mv[0]);});});}
+  const step=(e.shiftKey?10:1)*(IMP()?IN/2:1),snapK=v=>IMP()?Math.round(v*1000)/1000:r05(v),mv={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,step],ArrowDown:[0,-step]}[e.key];
+  if(mv){e.preventDefault();op(()=>{selBoards().forEach(b=>{b.x=snapK(b.x+mv[0]);b.y=snapK(b.y+mv[1]);});selStor().forEach(s=>{s.x=snapK(s.x+mv[0]);});});}
 });
 
 function renderPresets(){$('#preset').insertAdjacentHTML('beforeend',CFG.presets.map(p=>`<option value="${p.id}">${p.label}</option>`).join(''));}
 
-renderTiles();renderPresets();syncSettings();refresh();
+function applyPrefs(){
+  const r=document.documentElement;
+  if(prefs.theme==='light'||prefs.theme==='dark')r.dataset.theme=prefs.theme;else delete r.dataset.theme;
+  document.querySelectorAll('[data-pref]').forEach(b=>b.setAttribute('aria-pressed',String(prefs[b.dataset.pref]===b.dataset.v)));
+  document.querySelectorAll('[data-unit]').forEach(el=>{el.textContent=UNIT();});
+  document.querySelectorAll('[data-cm]').forEach(el=>{el.textContent=cm(parseFloat(el.dataset.cm));});
+  document.querySelectorAll('[data-m]').forEach(el=>{el.textContent=IMP()?el.dataset.i:el.dataset.m;});
+}
+$('#prefs').addEventListener('click',e=>{
+  const b=e.target.closest('[data-pref]');if(!b)return;
+  prefs[b.dataset.pref]=b.dataset.v;
+  try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs));}catch(_){}
+  applyPrefs();
+  if(b.dataset.pref==='units'){renderTiles();syncSettings();refresh();}
+});
+
+applyPrefs();renderTiles();renderPresets();syncSettings();refresh();
 
 // redraw when the drawing area changes width (rotate phone, resize window)
 let lastW=0;
